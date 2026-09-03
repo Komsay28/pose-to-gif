@@ -6,6 +6,7 @@ import cv2
 import mediapipe as mp
 from mediapipe.tasks.python.core import mediapipe_c_bindings
 from normalizer import normalize_pose
+from pose_matcher import cosine_similarity
 
 MODEL_URL = "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task"
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "pose_landmarker_lite.task")
@@ -61,6 +62,7 @@ def main():
 
     with mp.tasks.vision.PoseLandmarker.create_from_options(options) as landmarker:
         cap = cv2.VideoCapture(0)
+        reference_pose = None
         cv2.namedWindow("Pose Extractor", cv2.WINDOW_NORMAL)
 
         try:
@@ -74,6 +76,7 @@ def main():
                 rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
                 result = landmarker.detect(mp_image)
+                current_pose = None
 
                 if result.pose_landmarks:
                     pose_landmarks = result.pose_landmarks[0]
@@ -82,19 +85,26 @@ def main():
                         pose_landmarks,
                         mp.tasks.vision.PoseLandmarksConnections.POSE_LANDMARKS,
                     )
-                    #convert the pose into  a normalized numerical vector
-                    pose_vector =normalize_pose(pose_landmarks)
+                    current_pose = normalize_pose(pose_landmarks)
 
-                    print("Pose vector:")
-                    print(pose_vector)
-                    print("Number of values:",len(pose_vector))
+                    if cv2.waitKey(1) & 0xFF == ord("s"):
+                        reference_pose = current_pose
+                        print("Reference pose saved.")
+                        print("Pose vector:")
+                        print(reference_pose)
+                        print("Number of values:", len(reference_pose))
+
+                    if reference_pose is not None:
+                        similarity = cosine_similarity(current_pose, reference_pose)
+                        print(f"Pose similarity: {similarity:.4f}")
 
                 cv2.imshow("Pose Extractor", frame)
 
                 if cv2.getWindowProperty("Pose Extractor", cv2.WND_PROP_VISIBLE) < 1:
                     break
 
-                if cv2.waitKey(5) & 0xFF == ord("q"):
+                key = cv2.waitKey(5) & 0xFF
+                if key == ord("q"):
                     break
         finally:
             cap.release()
