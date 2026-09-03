@@ -5,6 +5,7 @@ import urllib.request
 import cv2
 import mediapipe as mp
 from mediapipe.tasks.python.core import mediapipe_c_bindings
+from normalizer import normalize_pose
 
 MODEL_URL = "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task"
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "pose_landmarker_lite.task")
@@ -81,11 +82,12 @@ def main():
                         pose_landmarks,
                         mp.tasks.vision.PoseLandmarksConnections.POSE_LANDMARKS,
                     )
+                    #convert the pose into  a normalized numerical vector
+                    pose_vector =normalize_pose(pose_landmarks)
 
-                    nose = pose_landmarks[0]
-                    print(
-                        f"Nose: x={nose.x:.3f}, y={nose.y:.3f}, z={nose.z:.3f}, visibility={getattr(nose, 'visibility', 0):.2f}"
-                    )
+                    print("Pose vector:")
+                    print(pose_vector)
+                    print("Number of values:",len(pose_vector))
 
                 cv2.imshow("Pose Extractor", frame)
 
