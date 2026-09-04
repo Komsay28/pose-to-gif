@@ -86,24 +86,24 @@ def main():
                         mp.tasks.vision.PoseLandmarksConnections.POSE_LANDMARKS,
                     )
                     current_pose = normalize_pose(pose_landmarks)
-
-                    if cv2.waitKey(1) & 0xFF == ord("s"):
-                        reference_pose = current_pose
-                        print("Reference pose saved.")
-                        print("Pose vector:")
-                        print(reference_pose)
-                        print("Number of values:", len(reference_pose))
-
-                    if reference_pose is not None:
-                        similarity = cosine_similarity(current_pose, reference_pose)
-                        print(f"Pose similarity: {similarity:.4f}")
-
                 cv2.imshow("Pose Extractor", frame)
 
                 if cv2.getWindowProperty("Pose Extractor", cv2.WND_PROP_VISIBLE) < 1:
-                    break
+                        break
 
                 key = cv2.waitKey(5) & 0xFF
+
+                if key == ord("s") and current_pose is not None:
+                    reference_pose = current_pose
+                    print("Reference pose saved.")
+                    print("Pose vector:")
+                    print(reference_pose)
+                    print("Number of values:", len(reference_pose))
+
+                if reference_pose is not None and current_pose is not None:
+                    similarity = cosine_similarity(current_pose, reference_pose)
+                    print(f"Pose similarity: {similarity:.4f}")
+
                 if key == ord("q"):
                     break
         finally:
